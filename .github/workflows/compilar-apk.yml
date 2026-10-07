@@ -1,0 +1,48 @@
+name: Compilar APK
+
+# Se ejecuta solo cada vez que subes cambios, y también a mano desde la pestaña Actions.
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # La carpeta "android" la crea Flutter. Solo se genera si todavía no existe.
+      - name: Preparar la carpeta android
+        run: |
+          if [ ! -d android ]; then
+            flutter create --platforms=android --project-name colorear_ninos --org com.arvi --no-pub .
+          fi
+          # Nombre que aparece bajo el ícono en el celular
+          sed -i 's/android:label="[^"]*"/android:label="Colorear"/' android/app/src/main/AndroidManifest.xml
+
+      - name: Bajar las librerías
+        run: flutter pub get
+
+      - name: Compilar el APK
+        run: flutter build apk --release
+
+      - name: Guardar el APK para descargarlo
+        uses: actions/upload-artifact@v4
+        with:
+          name: colorear-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
