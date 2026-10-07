@@ -32,7 +32,20 @@ jobs:
             flutter create --platforms=android --project-name colorear_ninos --org com.arvi --no-pub .
           fi
           # Nombre que aparece bajo el ícono en el celular
-          sed -i 's/android:label="[^"]*"/android:label="Colorear"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="[^"]*"/android:label="ARVI"/' android/app/src/main/AndroidManifest.xml
+
+      # Firma fija: así cada APK nuevo se instala "encima" del anterior,
+      # sin tener que desinstalar la app (se conservan los dibujos agregados).
+      # Si borras la carpeta "signing", el APK igual se compila (con una firma al azar).
+      - name: Usar la firma fija del proyecto
+        run: |
+          if [ -f signing/debug.keystore ]; then
+            mkdir -p ~/.android
+            cp signing/debug.keystore ~/.android/debug.keystore
+            echo "Firma fija instalada"
+          else
+            echo "No hay signing/debug.keystore: se usara una firma al azar"
+          fi
 
       - name: Bajar las librerías
         run: flutter pub get

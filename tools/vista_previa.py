@@ -82,20 +82,28 @@ def main():
         with open(a, encoding="utf-8") as f:
             dibujos.append(json.load(f))
 
-    columnas = 2
-    filas = math.ceil(len(dibujos) / columnas)
-    lado_pulg = 4.2
-    fig, ejes = plt.subplots(filas, columnas, figsize=(columnas * lado_pulg, filas * (lado_pulg + 0.4)))
-    fig.patch.set_facecolor("#FFF4D6")
-    lista = list(ejes.flat) if hasattr(ejes, "flat") else [ejes]
-    for ax, dib in zip(lista, dibujos):
-        dibujar(ax, dib, lado_pulg * 0.9)
-        ax.set_title(dib.get("nombre", dib["id"]), fontsize=14, pad=6)
-    for ax in lista[len(dibujos):]:
-        ax.axis("off")
-    fig.tight_layout()
-    fig.savefig(salida, dpi=110, facecolor=fig.get_facecolor())
-    print("imagen guardada en", salida)
+    # Hojas de 6 dibujos (3 columnas x 2 filas). Si hay más de 6 se crean varias imágenes.
+    por_hoja = 6
+    columnas = 3
+    lado_pulg = 3.5
+    hojas = [dibujos[i:i + por_hoja] for i in range(0, len(dibujos), por_hoja)]
+    base, ext = os.path.splitext(salida)
+    for n, grupo in enumerate(hojas, start=1):
+        filas = math.ceil(len(grupo) / columnas)
+        fig, ejes = plt.subplots(filas, columnas, figsize=(columnas * lado_pulg, filas * (lado_pulg + 0.35)),
+                                 squeeze=False)
+        fig.patch.set_facecolor("#FFF4D6")
+        lista = list(ejes.flat)
+        for ax, dib in zip(lista, grupo):
+            dibujar(ax, dib, lado_pulg * 0.88)
+            ax.set_title(dib.get("nombre", dib["id"]), fontsize=12, pad=4)
+        for ax in lista[len(grupo):]:
+            ax.axis("off")
+        fig.tight_layout()
+        destino = salida if len(hojas) == 1 else "%s_%d%s" % (base, n, ext)
+        fig.savefig(destino, dpi=100, facecolor=fig.get_facecolor())
+        plt.close(fig)
+        print("imagen guardada en", destino)
 
 
 if __name__ == "__main__":

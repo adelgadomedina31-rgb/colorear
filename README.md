@@ -1,16 +1,18 @@
-# Colorear — app para colorear, sin anuncios
+# ARVI — app para colorear, sin anuncios
 
 App Android hecha con Flutter para que una niña de 3 años pinte dibujos simples en blanco y negro.
-No tiene anuncios, no usa internet y no pide cuentas.
+No tiene anuncios, no usa internet y no pide cuentas. En el celular se llama **ARVI** y el menú de
+dibujos dice **COLOREA ARLETH**.
 
 ## Cómo funciona
 
 - Se elige un color abajo y se pasa el dedo sobre el dibujo: el pincel es muy grueso, así que cada pasada cubre un área parcialmente.
 - El color queda siempre **dentro de la zona** donde empezó el dedo; aunque se salga de las líneas, no se sale la pintura.
 - Botones grandes arriba: **inicio**, **anterior**, **siguiente** y **borrar lo pintado** (este pide confirmación).
-- El menú principal muestra los dibujos con lo que ya se pintó. Se tocan y se abren.
-- Viene con 4 dibujos: sol, flor, pez y casa.
+- El menú principal muestra los dibujos con lo que ya se pintó, de dos en dos. Se desliza hacia arriba y abajo con el dedo (la barra de la derecha muestra en qué parte de la lista va). Se toca un dibujo y se abre.
+- Viene con **34 dibujos** (animales, frutas, vehículos, cosas del cielo y del jardín...).
 - **Zona de papás**: mantener presionado el engranaje gris (arriba a la derecha del menú) para agregar dibujos nuevos.
+- Lo pintado se conserva mientras la app siga abierta en el celular; si se cierra del todo, los dibujos vuelven a estar en blanco.
 
 ## Cómo sacar el APK
 
@@ -34,6 +36,12 @@ No tiene anuncios, no usa internet y no pide cuentas.
 
 Cada vez que cambies algo y hagas `git push`, se genera un APK nuevo. También puedes lanzarlo a mano desde Actions → Compilar APK → Run workflow.
 
+**Instalar una versión nueva encima de la anterior:** la carpeta `signing/` contiene una firma fija
+(`debug.keystore`). Gracias a ella, todos los APK que se compilen desde ahora tienen la misma firma y
+se instalan **encima** del anterior, sin desinstalar. Mantén esa carpeta en el repositorio.
+(Los APK compilados *antes* de existir esa carpeta tenían una firma al azar: la primera vez hay que
+desinstalar la app vieja y luego instalar la nueva.)
+
 ### Camino B — en tu computadora
 
 1. Instala Flutter (docs.flutter.dev/get-started/install), Android Studio (trae el SDK de Android) y la extensión *Flutter* de VS Code. Verifica con `flutter doctor`.
@@ -51,7 +59,8 @@ Cada vez que cambies algo y hagas `git push`, se genera un APK nuevo. También p
    ```
 
 4. Para el APK: `flutter build apk --release`. Queda en `build/app/outputs/flutter-apk/app-release.apk`.
-5. Opcional: para que el nombre bajo el ícono sea "Colorear", cambia `android:label` en `android/app/src/main/AndroidManifest.xml`.
+5. Para que el nombre bajo el ícono sea "ARVI", cambia `android:label` en `android/app/src/main/AndroidManifest.xml`.
+   (En GitHub Actions esto se hace solo.)
 
 ## Consejo para que ella no se salga de la app
 
@@ -59,7 +68,9 @@ En Android puedes **fijar la pantalla** (en Ajustes busca "Fijar app" o "Fijar p
 
 ## Agregar dibujos nuevos
 
-Cada dibujo es un texto (JSON). Para sumarlo al celular sin tocar el código:
+Hay dos formas. Cada dibujo es un archivo de texto (JSON).
+
+### Forma 1 — desde el celular (uno por uno, sin recompilar)
 
 1. Copia el texto del dibujo en el celular.
 2. Abre la app y mantén presionado el engranaje del menú.
@@ -67,7 +78,13 @@ Cada dibujo es un texto (JSON). Para sumarlo al celular sin tocar el código:
 
 Los dibujos agregados quedan guardados en el celular y se pueden borrar desde la misma pantalla. Si guardas uno con el mismo `id` que otro que ya agregaste, lo reemplaza.
 
-Para dejar un dibujo "de fábrica" dentro de la app: guarda el `.json` en `assets/drawings/`, agrega su nombre en `assets/drawings/indice.json` y vuelve a compilar.
+### Forma 2 — dentro de la app, "de fábrica" (muchos de una vez)
+
+1. Copia el archivo `.json` del dibujo a la carpeta `assets/drawings/`.
+2. Abre `assets/drawings/indice.json` y agrega el nombre del archivo en la lista, **entre comillas y separado por comas**. El orden de la lista es el orden del menú.
+3. Guarda y sube los cambios (`git add .`, `git commit -m "Más dibujos"`, `git push`). GitHub compila un APK nuevo con los dibujos incluidos.
+
+El nombre dentro de `indice.json` debe ser exactamente el del archivo, y cada dibujo debe tener un `id` distinto.
 
 ### Formato de un dibujo
 
@@ -96,15 +113,21 @@ Para dejar un dibujo "de fábrica" dentro de la app: guarda el `.json` en `asset
 
 | Quiero cambiar… | Archivo |
 |---|---|
+| Nombre de la app bajo el ícono | `.github/workflows/compilar-apk.yml` (busca `android:label`) |
+| Título del menú ("COLOREA ARLETH") y su cuadrícula | `lib/pantallas/pantalla_inicio.dart` |
 | Grosor del pincel, grosor de los contornos, colores | `lib/config.dart` |
 | Cómo se pinta con el dedo | `lib/widgets/lienzo.dart` |
 | Pantalla de pintar (botones, posición de la paleta) | `lib/pantallas/pantalla_pintar.dart` |
-| Menú de dibujos | `lib/pantallas/pantalla_inicio.dart` |
 | Zona de papás | `lib/pantallas/pantalla_padres.dart` |
 | Formato y lectura de dibujos | `lib/models/dibujo.dart` |
-| Los 4 dibujos de fábrica | `assets/drawings/*.json` (se generan con `tools/generar_dibujos.py`) |
+| De dónde se cargan los dibujos | `lib/data/repositorio.dart` |
+| Los 34 dibujos de fábrica | `assets/drawings/*.json` (se generan con `tools/generar_dibujos.py`) |
+| Firma del APK | `signing/debug.keystore` |
 
-La carpeta `tools/` tiene dos scripts de Python opcionales: `generar_dibujos.py` crea los dibujos y `vista_previa.py` (necesita matplotlib) hace una imagen para revisar un dibujo antes de pasarlo al celular.
+La carpeta `tools/` tiene scripts de Python opcionales:
+
+- `generar_dibujos.py` crea los 34 dibujos y el `indice.json`. Los dibujos están definidos en `dibujos_base.py`, `dibujos_animales.py` y `dibujos_cosas.py`; las herramientas para armarlos (círculos, óvalos, polígonos, curvas...) están en `formas.py`. Para correrlo: `python3 tools/generar_dibujos.py` (ojo: borra y vuelve a crear todos los `.json` de `assets/drawings/`).
+- `vista_previa.py` (necesita `pip install matplotlib`) hace imágenes para revisar los dibujos antes de pasarlos al celular: `python3 tools/vista_previa.py vista.png` crea `vista_1.png`, `vista_2.png`... con 6 dibujos cada una.
 
 ## Ideas para mejorar
 
@@ -112,4 +135,4 @@ La carpeta `tools/` tiene dos scripts de Python opcionales: `generar_dibujos.py`
 - Un sonido suave o una carita feliz al terminar un dibujo.
 - Ícono propio de la app.
 - Cargar dibujos desde un archivo en vez de pegar texto.
-- Más dibujos, o categorías (animales, vehículos...).
+- Categorías en el menú (animales, vehículos, comida...).

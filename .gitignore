@@ -19,3 +19,5 @@ android/app/release/
 android/key.properties
 *.jks
 *.keystore
+# Excepción: la firma fija del APK (es una firma de pruebas, no un secreto)
+!signing/debug.keystore

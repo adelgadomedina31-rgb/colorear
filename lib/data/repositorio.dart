@@ -17,12 +17,11 @@ class Repositorio {
   static Future<List<Dibujo>> cargarIncluidos() async {
     final indice = await rootBundle.loadString('assets/drawings/indice.json');
     final nombres = (jsonDecode(indice) as List<dynamic>).cast<String>();
-    final lista = <Dibujo>[];
-    for (final nombre in nombres) {
-      final texto = await rootBundle.loadString('assets/drawings/$nombre');
-      lista.add(Dibujo.desdeTexto(texto));
-    }
-    return lista;
+    // Se leen todos los archivos a la vez (más rápido que uno por uno).
+    final textos = await Future.wait(
+      nombres.map((nombre) => rootBundle.loadString('assets/drawings/$nombre')),
+    );
+    return textos.map((texto) => Dibujo.desdeTexto(texto)).toList();
   }
 
   static Future<List<Dibujo>> cargarImportados() async {

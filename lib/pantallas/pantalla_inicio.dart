@@ -27,6 +27,7 @@ class _EstadoInicio extends State<PantallaInicio> {
     Color(0xFFEC407A),
   ];
 
+  final ScrollController _scroll = ScrollController();
   List<Dibujo> _dibujos = <Dibujo>[];
   bool _cargando = true;
   String? _error;
@@ -35,6 +36,12 @@ class _EstadoInicio extends State<PantallaInicio> {
   void initState() {
     super.initState();
     _cargar();
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
   Future<void> _cargar() async {
@@ -85,18 +92,28 @@ class _EstadoInicio extends State<PantallaInicio> {
         ),
       );
     }
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-      ),
-      itemCount: _dibujos.length,
-      itemBuilder: (context, i) => _Tarjeta(
-        dibujo: _dibujos[i],
-        borde: _bordes[i % _bordes.length],
-        alTocar: () => _abrirDibujo(i),
+    // Con muchos dibujos el menú se desliza hacia arriba/abajo con el dedo.
+    // La barra de la derecha le muestra a quien mira en qué parte de la lista va.
+    return Scrollbar(
+      controller: _scroll,
+      thumbVisibility: true,
+      thickness: 6,
+      radius: const Radius.circular(8),
+      child: GridView.builder(
+        controller: _scroll,
+        cacheExtent: 800,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+        ),
+        itemCount: _dibujos.length,
+        itemBuilder: (context, i) => _Tarjeta(
+          dibujo: _dibujos[i],
+          borde: _bordes[i % _bordes.length],
+          alTocar: () => _abrirDibujo(i),
+        ),
       ),
     );
   }
@@ -150,17 +167,38 @@ class _Titulo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const texto = '¡A colorear!';
-    return Text.rich(
-      TextSpan(
-        style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900),
-        children: [
-          for (var i = 0; i < texto.length; i++)
-            TextSpan(
-              text: texto[i],
-              style: TextStyle(color: _colores[i % _colores.length]),
-            ),
-        ],
+    const texto = 'COLOREA ARLETH';
+    final letras = <TextSpan>[];
+    var n = 0; // cuenta solo las letras, para que los colores no salten con el espacio
+    for (var i = 0; i < texto.length; i++) {
+      final letra = texto[i];
+      if (letra == ' ') {
+        letras.add(const TextSpan(text: ' '));
+      } else {
+        letras.add(
+          TextSpan(
+            text: letra,
+            style: TextStyle(color: _colores[n % _colores.length]),
+          ),
+        );
+        n++;
+      }
+    }
+    // FittedBox: si el celular es angosto, el título se achica en vez de cortarse.
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text.rich(
+        TextSpan(
+          style: const TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
+          children: letras,
+        ),
+        maxLines: 1,
+        softWrap: false,
       ),
     );
   }
